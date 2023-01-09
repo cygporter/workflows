@@ -216,7 +216,7 @@ jobs:
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: tar -cvf build-results.tar "${CYGPORT_PF}.${ARCH}/"
+        run: tar -cvf build-results.tar "${CYGPORT_PF}.${CYGPORT_ARCH}/"
         timeout-minutes: 10
 
       - name: Store build results
