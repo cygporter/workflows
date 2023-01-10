@@ -14,42 +14,42 @@ on:
       bootstrap_package_install_timeout:
         description: Time in minutes to allow for the Cygwin bootstrap install
         required: false
-        type: integer
+        type: number
         default: 360
       required_package_install_timeout:
         description: Time in minutes to allow for the Cygwin build dependency install
         required: false
-        type: integer
+        type: number
         default: 360
       cygport_download_timeout:
         description: Time in minutes to allow for the `cygport download` stage
         required: false
-        type: integer
+        type: number
         default: 360
       cygport_prep_timeout:
         description: Time in minutes to allow for the `cygport prep` stage
         required: false
-        type: integer
+        type: number
         default: 360
       cygport_compile_timeout:
         description: Time in minutes to allow for the `cygport compile` stage
         required: false
-        type: integer
+        type: number
         default: 360
       cygport_test_timeout:
         description: Time in minutes to allow for the `cygport test` stage
         required: false
-        type: integer
+        type: number
         default: 360
       cygport_install_timeout:
         description: Time in minutes to allow for the `cygport install` stage
         required: false
-        type: integer
+        type: number
         default: 360
       cygport_package_timeout:
         description: Time in minutes to allow for the `cygport package` stage
         required: false
-        type: integer
+        type: number
         default: 360
 
 jobs:
