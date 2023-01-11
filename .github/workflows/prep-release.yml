@@ -1,0 +1,146 @@
+name: Prepare release
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Name for the release tag
+        required: false
+        default: ''
+        type: string
+      cygport_file:
+        description: Path to the cygport file
+        required: true
+        type: string
+      bootstrap_packages:
+        description: Cygwin packages required to parse the cygport file
+        required: false
+        type: string
+        default: cygport
+
+permissions:
+  contents: write
+
+jobs:
+  prep-release:
+    name: Prepare release
+    runs-on: windows-latest
+
+    steps:
+
+      - name: Configure Git for Windows' core.autocrlf
+        run: git config --global core.autocrlf input
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Cygwin package cache
+        uses: actions/cache/restore@v3
+        with:
+          key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: C:\cygwin-packages
+          restore-keys: |
+            cygwin-packages-${{ github.run_id }}-
+            cygwin-packages-
+
+      - name: Compute package cache checksum
+        working-directory: C:\
+        shell: bash
+        run: |
+          if [[ -d cygwin-packages ]]; then
+            find cygwin-packages -type f ! -name setup.ini -print0 |
+              sort -z |
+              xargs -0 b2sum >cygwin-package-checksum.old
+          fi
+
+      - name: Install bootstrap packages
+        id: install-bootstrap
+        uses: cygwin/cygwin-install-action@db475590d56881c6cef7b3f96f6f3dd9532ea1f4
+        with:
+          packages: ${{ inputs.bootstrap_packages }}
+          add-to-path: false
+
+      - name: Load data from cygport file
+        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
+        env:
+          PATH: C:\cygwin\bin
+        run: |
+          eval "$(cygport "${{ inputs.cygport_file }}" vars NAME PF ARCH)"
+          printf 'CYGPORT_NAME=%s\n' "$NAME" >>"$GITHUB_ENV"
+          printf 'CYGPORT_PF=%s\n' "$PF" >>"$GITHUB_ENV"
+          printf 'CYGPORT_ARCH=%s\n' "$ARCH" >>"$GITHUB_ENV"
+
+      - name: Check if package cache needs updating
+        if: always() && steps.install-bootstrap.outcome == 'success'
+        working-directory: 'C:\'
+        shell: bash
+        run: |
+          if [[ -d cygwin-packages ]]; then
+            find cygwin-packages -type f '!' -name setup.ini -print0 |
+              sort -z |
+              xargs -0 b2sum >cygwin-package-checksum.new
+            if ! diff cygwin-package-checksum.old cygwin-package-checksum.new; then
+              printf 'UPDATE_CYGWIN_PACKAGE_CACHE=YesPlease' >>"$GITHUB_ENV"
+            fi
+          fi
+
+      - name: Store package cache
+        if: always() && env.UPDATE_CYGWIN_PACKAGE_CACHE == 'YesPlease'
+        uses: actions/cache/save@v3
+        with:
+          key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: 'C:\cygwin-packages'
+
+      - name: Generate cygcheck output
+        if: always() && steps.install-bootstrap.outcome == 'success'
+        run: C:\cygwin\bin\cygcheck.exe -srv >C:\cygwin\var\log\cygcheck.out
+
+      - name: Store Cygwin logs
+        if: always() && (steps.install-bootstrap.outcome == 'success' || steps.install-bootstrap.outcome == 'failure')
+        uses: actions/upload-artifact@v3
+        with:
+          name: cygwin-logs
+          path: 'C:\cygwin\var\log\'
+
+      - name: Get build cache
+        id: build-cache
+        uses: actions/cache/restore@v3
+        with:
+          key: ${{ env.CYGPORT_NAME }}-build-${{ github.ref_name }}-${{ github.sha }}
+          path: build-results.tar
+
+      - name: Abort on cache miss
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: |
+          Write-Output "::error::Could not find build cache"
+          exit 1
+
+      - name: Check tag name
+        run: |
+          $inputTag = '${{ inputs.release_tag }}'
+          if ($inputTag -eq '') {
+            "TAG=v$Env:PVR" >>$Env:GITHUB_ENV
+          } elseif ($inputTag.StartsWith("v$Env:PVR")) {
+            # e.g. v1.2.3-4-rc0, when PVR is v1.2.3-4
+            "TAG=$inputTag" >>$Env:GITHUB_ENV
+          } else {
+            Write-Output "::error title=Bad tag::Requested tag $inputTag not prefixed by v$Env:PVR"
+            exit 1
+          }
+
+      - name: Unpack the build
+        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
+        env:
+          PATH: C:\cygwin\bin
+        run: tar -xf build-results.tar
+
+      - name: Create draft GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG }}
+          draft: true
+          files: |
+            ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*
+            ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*/*
+          fail_on_unmatched_files: true
+          target_commitish: ${{ github.sha }}
