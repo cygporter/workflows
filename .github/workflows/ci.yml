@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
-          path: 'C:\cygwin-packages'
+          path: C:\cygwin-packages
           restore-keys: |
             cygwin-packages-${{ github.run_id }}-
             cygwin-packages-
@@ -50,7 +50,7 @@ jobs:
       # need to store a new cache, rather than filling the cache with identical
       # stores.
       - name: Compute package cache checksum
-        working-directory: 'C:\'
+        working-directory: C:\
         shell: bash
         run: |
           if [[ -d cygwin-packages ]]; then
@@ -66,7 +66,7 @@ jobs:
           packages: ${{ inputs.bootstrap_packages }}
           add-to-path: false
 
-      - name: Load build requirements from cygport file
+      - name: Load data from cygport file
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
@@ -88,15 +88,15 @@ jobs:
       # managed to reasonably update them.
       - name: Check if package cache needs updating
         if: always() && steps.install-bootstrap.outcome == 'success'
-        working-directory: 'C:\'
+        working-directory: C:\
         shell: bash
         run: |
           if [[ -d cygwin-packages ]]; then
-            find cygwin-packages -type f '!' -name setup.ini -print0 |
+            find cygwin-packages -type f ! -name setup.ini -print0 |
               sort -z |
               xargs -0 b2sum >cygwin-package-checksum.new
             if ! diff cygwin-package-checksum.old cygwin-package-checksum.new; then
-              printf 'UPDATE_CYGWIN_PACKAGE_CACHE=YesPlease' >>"$GITHUB_ENV"
+              printf UPDATE_CYGWIN_PACKAGE_CACHE=YesPlease >>"$GITHUB_ENV"
             fi
           fi
 
@@ -105,7 +105,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
-          path: 'C:\cygwin-packages'
+          path: C:\cygwin-packages
 
       - name: Generate cygcheck output
         if: always() && steps.install-bootstrap.outcome == 'success'
@@ -116,44 +116,44 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: cygwin-logs
-          path: 'C:\cygwin\var\log\'
+          path: C:\cygwin\var\log\
 
       - name: Cygport download
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport "${{ inputs.cygport_file }}" download
+        run: cygport '${{ inputs.cygport_file }}' download
 
       - name: Cygport prep
         id: cygport-prep
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport "${{ inputs.cygport_file }}" prep
+        run: cygport '${{ inputs.cygport_file }}' prep
 
       - name: Cygport compile
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport "${{ inputs.cygport_file }}" compile
+        run: cygport '${{ inputs.cygport_file }}' compile
 
       - name: Cygport test
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport "${{ inputs.cygport_file }}" test
+        run: cygport '${{ inputs.cygport_file }}' test
 
       - name: Cygport install
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport "${{ inputs.cygport_file }}" install
+        run: cygport '${{ inputs.cygport_file }}' install
 
       - name: Cygport package
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport "${{ inputs.cygport_file }}" package
+        run: cygport '${{ inputs.cygport_file }}' package
 
       - name: Tar up build results
         if: always()
