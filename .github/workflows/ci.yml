@@ -11,46 +11,6 @@ on:
         required: false
         type: string
         default: cygport
-      bootstrap_package_install_timeout:
-        description: Time in minutes to allow for the Cygwin bootstrap install
-        required: false
-        type: number
-        default: 360
-      required_package_install_timeout:
-        description: Time in minutes to allow for the Cygwin build dependency install
-        required: false
-        type: number
-        default: 360
-      cygport_download_timeout:
-        description: Time in minutes to allow for the `cygport download` stage
-        required: false
-        type: number
-        default: 360
-      cygport_prep_timeout:
-        description: Time in minutes to allow for the `cygport prep` stage
-        required: false
-        type: number
-        default: 360
-      cygport_compile_timeout:
-        description: Time in minutes to allow for the `cygport compile` stage
-        required: false
-        type: number
-        default: 360
-      cygport_test_timeout:
-        description: Time in minutes to allow for the `cygport test` stage
-        required: false
-        type: number
-        default: 360
-      cygport_install_timeout:
-        description: Time in minutes to allow for the `cygport install` stage
-        required: false
-        type: number
-        default: 360
-      cygport_package_timeout:
-        description: Time in minutes to allow for the `cygport package` stage
-        required: false
-        type: number
-        default: 360
 
 jobs:
   build-test:
@@ -60,11 +20,9 @@ jobs:
 
       - name: Configure Git for Windows' core.autocrlf
         run: git config --global core.autocrlf input
-        timeout-minutes: 1
 
       - name: Checkout
         uses: actions/checkout@v3
-        timeout-minutes: 1
 
       # In the name of speed, pull packages from a previous cache on GitHub's
       # servers if one exists, rather than hitting the Cygwin mirrors.
@@ -100,7 +58,6 @@ jobs:
               sort -z |
               xargs -0 b2sum >cygwin-package-checksum.old
           fi
-        timeout-minutes: 1
 
       - name: Install bootstrap packages
         id: install-bootstrap
@@ -108,7 +65,6 @@ jobs:
         with:
           packages: ${{ inputs.bootstrap_packages }}
           add-to-path: false
-        timeout-minutes: ${{ inputs.bootstrap_package_install_timeout }}
 
       - name: Load build requirements from cygport file
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
@@ -120,7 +76,6 @@ jobs:
           printf 'CYGPORT_PF=%s\n' "$PF" >>"$GITHUB_ENV"
           printf 'CYGPORT_ARCH=%s\n' "$ARCH" >>"$GITHUB_ENV"
           printf 'CYGPORT_BUILD_REQUIRES=%s\n' "$BUILD_REQUIRES" >>"$GITHUB_ENV"
-        timeout-minutes: 1
 
       - name: Install Cygwin build requirements
         id: install-build-reqs
@@ -128,7 +83,6 @@ jobs:
         with:
           packages: ${{ env.CYGPORT_BUILD_REQUIRES }}
           add-to-path: false
-        timeout-minutes: ${{ inputs.required_package_install_timeout }}
 
       # Check if the package downloads have changed if there's any chance we've
       # managed to reasonably update them.
@@ -145,7 +99,6 @@ jobs:
               printf 'UPDATE_CYGWIN_PACKAGE_CACHE=YesPlease' >>"$GITHUB_ENV"
             fi
           fi
-        timeout-minutes: 1
 
       - name: Store package cache
         if: always() && env.UPDATE_CYGWIN_PACKAGE_CACHE == 'YesPlease'
@@ -153,12 +106,10 @@ jobs:
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
           path: 'C:\cygwin-packages'
-        timeout-minutes: 1
 
       - name: Generate cygcheck output
         if: always() && steps.install-bootstrap.outcome == 'success'
         run: C:\cygwin\bin\cygcheck.exe -srv >C:\cygwin\var\log\cygcheck.out
-        timeout-minutes: 5
 
       - name: Store Cygwin logs
         if: always() && (steps.install-bootstrap.outcome == 'success' || steps.install-bootstrap.outcome == 'failure')
@@ -166,14 +117,12 @@ jobs:
         with:
           name: cygwin-logs
           path: 'C:\cygwin\var\log\'
-        timeout-minutes: 5
 
       - name: Cygport download
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "${{ inputs.cygport_file }}" download
-        timeout-minutes: ${{ inputs.cygport_download_timeout }}
 
       - name: Cygport prep
         id: cygport-prep
@@ -181,35 +130,30 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: cygport "${{ inputs.cygport_file }}" prep
-        timeout-minutes: ${{ inputs.cygport_prep_timeout }}
 
       - name: Cygport compile
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "${{ inputs.cygport_file }}" compile
-        timeout-minutes: ${{ inputs.cygport_compile_timeout }}
 
       - name: Cygport test
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "${{ inputs.cygport_file }}" test
-        timeout-minutes: ${{ inputs.cygport_test_timeout }}
 
       - name: Cygport install
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "${{ inputs.cygport_file }}" install
-        timeout-minutes: ${{ inputs.cygport_install_timeout }}
 
       - name: Cygport package
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "${{ inputs.cygport_file }}" package
-        timeout-minutes: ${{ inputs.cygport_package_timeout }}
 
       - name: Tar up build results
         if: always()
@@ -217,7 +161,6 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: tar -cvf build-results.tar "${CYGPORT_PF}.${CYGPORT_ARCH}/"
-        timeout-minutes: 10
 
       - name: Store build results
         if: always() && steps.cygport-prep.outcome == 'success'
@@ -226,7 +169,6 @@ jobs:
           name: build-results
           path: build-results.tar
           if-no-files-found: error
-        timeout-minutes: 5
 
       # Artifacts are great for letting me download the files, and passing
       # files between jobs in the same action, but not for passing files
@@ -238,4 +180,3 @@ jobs:
         with:
           key: ${{ env.CYGPORT_NAME }}-build-${{ github.ref_name }}-${{ github.sha }}
           path: build-results.tar
-        timeout-minutes: 5
