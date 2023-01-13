@@ -22,7 +22,7 @@ define `bootstrap_packages` to specify what additional packages to install for
 the cygport file to be parsable.
 
 ```yaml
-uses: cygporter/workflows/.github/workflows/ci.yml
+uses: cygporter/workflows/.github/workflows/ci.yml@main
 with:
   # Required: Path to the cygport file that you want to build and test.
   cygport_file: <path>
@@ -43,7 +43,7 @@ need to have recently run the `ci.yml` workflow on the same branch and for the
 same commit before you can run this one.
 
 ```yaml
-uses: cygporter/workflows/.github/workflows/prep-release.yml
+uses: cygporter/workflows/.github/workflows/prep-release.yml@main
 with:
   # Required: Path to the cygport file that you want to release from.
   cygport_file: <path>
