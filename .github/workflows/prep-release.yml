@@ -65,8 +65,9 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: |
-          eval "$(cygport "${{ inputs.cygport_file }}" vars NAME PF ARCH)"
+          eval "$(cygport "${{ inputs.cygport_file }}" vars NAME PVR PF ARCH)"
           printf 'CYGPORT_NAME=%s\n' "$NAME" >>"$GITHUB_ENV"
+          printf 'CYGPORT_PVR=%s\n' "$PVR" >>"$GITHUB_ENV"
           printf 'CYGPORT_PF=%s\n' "$PF" >>"$GITHUB_ENV"
           printf 'CYGPORT_ARCH=%s\n' "$ARCH" >>"$GITHUB_ENV"
 
@@ -119,12 +120,12 @@ jobs:
         run: |
           $inputTag = '${{ inputs.release_tag }}'
           if ($inputTag -eq '') {
-            "TAG=v$Env:PVR" >>$Env:GITHUB_ENV
-          } elseif ($inputTag.StartsWith("v$Env:PVR")) {
+            "TAG=v$Env:CYGPORT_PVR" >>$Env:GITHUB_ENV
+          } elseif ($inputTag.StartsWith("v$Env:CYGPORT_PVR")) {
             # e.g. v1.2.3-4-rc0, when PVR is v1.2.3-4
             "TAG=$inputTag" >>$Env:GITHUB_ENV
           } else {
-            Write-Output "::error title=Bad tag::Requested tag $inputTag not prefixed by v$Env:PVR"
+            Write-Output "::error title=Bad tag::Requested tag $inputTag not prefixed by v$Env:CYGPORT_PVR"
             exit 1
           }
 
