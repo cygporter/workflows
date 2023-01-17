@@ -17,6 +17,11 @@ on:
         required: false
         type: string
         default: cygport
+      publish:
+        description: Publish the release or leave as a draft
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -136,11 +141,11 @@ jobs:
           PATH: C:\cygwin\bin
         run: tar -xf build-results.tar
 
-      - name: Create draft GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG }}
-          draft: true
+          draft: ${{ ! inputs.publish }}
           files: |
             ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*
             ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*/*
