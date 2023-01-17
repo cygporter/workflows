@@ -25,6 +25,9 @@ jobs:
   prep-release:
     name: Prepare release
     runs-on: windows-latest
+    env:
+      CYGPORT_FILE: ${{ inputs.cygport_file }}
+      REQUESTED_TAG: ${{ inputs.release_tag }}
 
     steps:
 
@@ -65,7 +68,7 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: |
-          eval "$(cygport "${{ inputs.cygport_file }}" vars NAME PVR PF ARCH)"
+          eval "$(cygport "$CYGPORT_FILE" vars NAME PVR PF ARCH)"
           printf 'CYGPORT_NAME=%s\n' "$NAME" >>"$GITHUB_ENV"
           printf 'CYGPORT_PVR=%s\n' "$PVR" >>"$GITHUB_ENV"
           printf 'CYGPORT_PF=%s\n' "$PF" >>"$GITHUB_ENV"
@@ -118,14 +121,13 @@ jobs:
 
       - name: Check tag name
         run: |
-          $inputTag = '${{ inputs.release_tag }}'
-          if ($inputTag -eq '') {
+          if ($Env:REQUESTED_TAG -eq '') {
             "TAG=v$Env:CYGPORT_PVR" >>$Env:GITHUB_ENV
-          } elseif ($inputTag.StartsWith("v$Env:CYGPORT_PVR")) {
+          } elseif ($Env:REQUESTED_TAG.StartsWith("v$Env:CYGPORT_PVR")) {
             # e.g. v1.2.3-4-rc0, when PVR is v1.2.3-4
             "TAG=$inputTag" >>$Env:GITHUB_ENV
           } else {
-            Write-Output "::error title=Bad tag::Requested tag $inputTag not prefixed by v$Env:CYGPORT_PVR"
+            Write-Output "::error title=Bad tag::Requested tag $Env:REQUESTED_TAG not prefixed by v$Env:CYGPORT_PVR"
             exit 1
           }
 

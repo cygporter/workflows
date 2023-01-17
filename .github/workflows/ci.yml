@@ -16,6 +16,8 @@ jobs:
   build-test:
     name: Build and test
     runs-on: windows-latest
+    env:
+      CYGPORT_FILE: ${{ inputs.cygport_file }}
     steps:
 
       - name: Configure Git for Windows' core.autocrlf
@@ -122,38 +124,38 @@ jobs:
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport '${{ inputs.cygport_file }}' download
+        run: cygport "$CYGPORT_FILE" download
 
       - name: Cygport prep
         id: cygport-prep
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport '${{ inputs.cygport_file }}' prep
+        run: cygport "$CYGPORT_FILE" prep
 
       - name: Cygport compile
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport '${{ inputs.cygport_file }}' compile
+        run: cygport "$CYGPORT_FILE" compile
 
       - name: Cygport test
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport '${{ inputs.cygport_file }}' test
+        run: cygport "$CYGPORT_FILE" test
 
       - name: Cygport install
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport '${{ inputs.cygport_file }}' install
+        run: cygport "$CYGPORT_FILE" install
 
       - name: Cygport package
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: cygport '${{ inputs.cygport_file }}' package
+        run: cygport "$CYGPORT_FILE" package
 
       - name: Tar up build results
         if: always()
