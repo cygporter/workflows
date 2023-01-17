@@ -12,6 +12,10 @@ on:
         required: false
         type: string
         default: cygport
+      tag_name:
+        description: Name of the tag for the release
+        required: true
+        type: string
     secrets:
       maintainer_key:
         description: RSA private key for uploading to Cygwin servers in OpenSSH format
@@ -104,17 +108,24 @@ jobs:
       - name: Get the release target branch
         id: target
         uses: actions/github-script@v6
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
         with:
           script: |
-            const target_commitish = context.payload.release.target_commitish;
-            if (target_commitish.startsWith('refs/heads/')) {
-              target_ref = target_commitish.substring(11);
+            const releaseRsp = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: process.env.TAG_NAME
+            });
+            const targetCommitish = releaseRsp.data.target_commitish;
+            if (targetCommitish.startsWith('refs/heads/')) {
+              targetRef = targetCommitish.substring(11);
             } else if (target_commitish.startsWith('refs/tags/')) {
-              target_ref = target.commitish.substring(10);
+              targetRef = targetCommitish.substring(10);
             } else {
-              core.setFailed('Unexpected target_commitish: ' + target_commitish);
+              core.setFailed('Unexpected target_commitish: ' + targetCommitish);
             }
-            core.setOutput('target_ref', target_ref);
+            core.setOutput('target_ref', targetRef);
 
       - name: Get build cache
         id: build-cache
@@ -183,7 +194,7 @@ jobs:
 
       - name: Mirror to the Cygwin Git repositories
         env:
-          TAG_NAME: ${{ github.event.release.tag_name }}
+          TAG_NAME: ${{ inputs.tag_name }}
         run: git push "cygwin@cygwin.com:/git/cygwin-packages/$Env:CYGPORT_NAME" tag "$Env:TAG_NAME"
 
       - name: Remove maintainer key

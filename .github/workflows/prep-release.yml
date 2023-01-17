@@ -22,6 +22,10 @@ on:
         required: false
         type: boolean
         default: false
+    outputs:
+      release_tag:
+        description: Name of the release tag
+        value: ${{ jobs.prep-release.outputs.tag }}
 
 permissions:
   contents: write
@@ -33,6 +37,8 @@ jobs:
     env:
       CYGPORT_FILE: ${{ inputs.cygport_file }}
       REQUESTED_TAG: ${{ inputs.release_tag }}
+    outputs:
+      tag: ${{ steps.tag-name.outputs.tag }}
 
     steps:
 
@@ -125,11 +131,12 @@ jobs:
           exit 1
 
       - name: Check tag name
+        id: tag-name
         run: |
           if ($Env:REQUESTED_TAG -eq "") {
-            Write-Output "TAG=v$Env:CYGPORT_PVR" | Tee-Object -FilePath $Env:GITHUB_ENV
+            Write-Output "tag=v$Env:CYGPORT_PVR" | Tee-Object -FilePath $Env:GITHUB_OUTPUT
           } elseif ($Env:REQUESTED_TAG.StartsWith("v$Env:CYGPORT_PVR")) {
-            Write-Output "TAG=$Env:REQUESTED_TAG" | Tee-Object -FilePath $Env:GITHUB_ENV
+            Write-Output "tag=$Env:REQUESTED_TAG" | Tee-Object -FilePath $Env:GITHUB_OUTPUT
           } else {
             Write-Output "::error title=Bad tag::Requested tag $Env:REQUESTED_TAG not prefixed by v$Env:CYGPORT_PVR"
             exit 1
@@ -144,11 +151,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.TAG }}
+          tag_name: ${{ steps.tag-name.outputs.tag }}
           draft: ${{ ! inputs.publish }}
           files: |
             ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*
             ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*/*
           fail_on_unmatched_files: true
           target_commitish: ${{ github.ref }}
-          body: ${{ env.TAG }}
+          body: ${{ steps.tag-name.outputs.tag }}
