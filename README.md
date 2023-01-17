@@ -22,7 +22,7 @@ define `bootstrap_packages` to specify what additional packages to install for
 the cygport file to be parsable.
 
 ```yaml
-uses: cygporter/workflows/.github/workflows/ci.yml@main
+uses: cygporter/workflows/.github/workflows/build-test.yml@v1
 with:
   # Required: Path to the cygport file that you want to build and test.
   cygport_file: <path>
@@ -32,18 +32,20 @@ with:
   bootstrap_packages: <list>
 ```
 
+The workflow outputs the value of the cygport [`$PV`][PV] variable as `pv`.
+
 ### Prepare release
 
-This workflow creates a draft release on GitHub.  The release isn't publicly
-visible until you manually publish it, and this workflow does not do anything
-to push the release to the Cygwin mirrors.
+This workflow creates a release on GitHub.  By default, the release isn't
+publicly visible until you manually publish it, and this workflow does not do
+anything to push the release to the Cygwin mirrors.
 
 This workflow expects to find matching build output in the cache, so you will
-need to have recently run the `ci.yml` workflow on the same branch and for the
-same commit before you can run this one.
+need to have recently run the `build-test.yml` workflow on the same branch and
+for the same commit before you can run this one.
 
 ```yaml
-uses: cygporter/workflows/.github/workflows/prep-release.yml@main
+uses: cygporter/workflows/.github/workflows/prep-release.yml@v1
 with:
   # Required: Path to the cygport file that you want to release from.
   cygport_file: <path>
@@ -58,9 +60,49 @@ with:
   # Optional: Space-separated list of packages required to parse the cygport
   # file.  Defaults to "cygport".
   bootstrap_packages: <list>
+
+  # Optional: Whether to publish the release on GitHub.  Defaults to "false".
+  publish: (true|false)
+
+# Needed to be able to create the release.
+permissions:
+  contents: write
+```
+
+The workflow outputs the tag that was used for the release as `release_tag`.
+This will be the same as the value passed in as `release_tag` if one was passed
+in, or `v$PVR` if not.
+
+### Release
+
+This workflow pushes the release to the Cygwin mirrors, and also pushes the
+release tag to the Cygwin Git repositories, to aid discoverability.
+
+This workflow expects to be called after the `prep-release.yml` workflow.
+
+```yaml
+uses: cygporter/workflows/.github/workflows/release.yml@v1
+with:
+  # Required: Path to the cygport file that you want to release from.
+  cygport_file: <path>
+
+  # Required: Name of the tag used in the GitHub release.  This release must be
+  # published, and will be used to get the correct build to upload to the
+  # Cygwin mirrors.
+  tag_name: <tag-name>
+
+  # Optional: Space-separated list of packages required to parse the cygport
+  # file.  Defaults to "cygport".
+  bootstrap_packages: <list>
+
+secrets:
+  # Required: The RSA private key to connect to the Cygwin servers, as would
+  # normally be stored at ~/.ssh/id_rsa.
+  maintainer_key: <string>
 ```
 
 [reusable workflows]: https://docs.github.com/en/actions/using-workflows/reusing-workflows
 [cygport]: https://cygwin.github.io/cygport/
 [cygporter/action]: https://github.com/cygporter/action
 [actions]: https://docs.github.com/en/actions/creating-actions/about-custom-actions
+[PV]: https://cygwin.github.io/cygport/syntax_cygpart.html#PV
