@@ -15,6 +15,9 @@ on:
       pv:
         description: The $PV value from the cygport file
         value: ${{ jobs.build-test.outputs.pv }}
+      cache-found:
+        description: Whether an existing build cache was found and used
+        value: ${{ jobs.build-test.outputs.cache-found }}
 
 jobs:
   build-test:
@@ -24,6 +27,7 @@ jobs:
       CYGPORT_FILE: ${{ inputs.cygport_file }}
     outputs:
       pv: ${{ steps.data.outputs.pv }}
+      cache-found: ${{ steps.build-cache.outputs.cache-hit == 'true' }}
     steps:
 
       - name: Configure Git for Windows' core.autocrlf
@@ -90,7 +94,17 @@ jobs:
 
           printf 'pv=%s\n' "$PV" | tee -a "$GITHUB_OUTPUT"
 
+      # Cache hit here means we can skip most of the rest of this job, since
+      # this job is essentially building this cache.
+      - name: Use build cache
+        id: build-cache
+        uses: actions/cache@v3
+        with:
+          key: ${{ env.CYGPORT_NAME }}-build-${{ github.sha }}
+          path: build-results.tar
+
       - name: Install Cygwin build requirements
+        if: steps.build-cache.outputs.cache-hit != 'true'
         uses: cygwin/cygwin-install-action@db475590d56881c6cef7b3f96f6f3dd9532ea1f4
         with:
           packages: ${{ env.CYGPORT_BUILD_REQUIRES }}
@@ -131,12 +145,14 @@ jobs:
           path: C:\cygwin\var\log\
 
       - name: Cygport download
+        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" download
 
       - name: Cygport prep
+        if: steps.build-cache.outputs.cache-hit != 'true'
         id: cygport-prep
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
@@ -144,51 +160,44 @@ jobs:
         run: cygport "$CYGPORT_FILE" prep
 
       - name: Cygport compile
+        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" compile
 
       - name: Cygport test
+        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" test
 
       - name: Cygport install
+        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" install
 
       - name: Cygport package
+        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" package
 
       - name: Tar up build results
-        if: always()
+        if: always() && steps.cygport-prep.outcome != 'skipped'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: tar -cvf build-results.tar "$CYGPORT_BUILD_DIR"
 
       - name: Store build results
-        if: always() && steps.cygport-prep.outcome == 'success'
+        if: always() && steps.cygport-prep.outcome != 'skipped'
         uses: actions/upload-artifact@v3
         with:
           name: build-results
           path: build-results.tar
           if-no-files-found: error
-
-      # Artifacts are great for letting me download the files, and passing
-      # files between jobs in the same action, but not for passing files
-      # between actions.  Cache the build results so they can be used by a
-      # separate release action.
-      - name: Cache build results
-        if: startsWith(github.ref, 'refs/heads/')
-        uses: actions/cache/save@v3
-        with:
-          key: ${{ env.CYGPORT_NAME }}-build-${{ github.ref_name }}-${{ github.sha }}
-          path: build-results.tar

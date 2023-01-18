@@ -1,0 +1,23 @@
+# Most basic test cygport file I can manage
+NAME=mainline
+VERSION=1
+RELEASE=1
+CATEGORY=Test
+SUMMARY='Test package'
+HOMEPAGE=
+LICENSE=
+
+src_compile () {
+	cd "$B"
+	{
+		echo '#!/usr/bin/env sh'
+		echo "echo 'Hello, world!'"
+	} >helloworld
+}
+
+src_install () {
+	cd "$B"
+	dobin helloworld
+}
+
+# vim: set ft=bash noexpandtab tabstop=8 listchars=tab\:\ \ ,trail\:-,lead\:- :
