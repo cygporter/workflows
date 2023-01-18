@@ -121,7 +121,7 @@ jobs:
         id: build-cache
         uses: actions/cache/restore@v3
         with:
-          key: ${{ env.CYGPORT_NAME }}-build-${{ github.ref_name }}-${{ github.sha }}
+          key: ${{ env.CYGPORT_NAME }}-build-${{ github.sha }}
           path: build-results.tar
 
       - name: Abort on cache miss
