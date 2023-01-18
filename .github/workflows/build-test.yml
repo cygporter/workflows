@@ -15,6 +15,9 @@ on:
       pv:
         description: The $PV value from the cygport file
         value: ${{ jobs.build-test.outputs.pv }}
+      cache-found:
+        description: Whether an existing build cache was found and used
+        value: ${{ jobs.build-test.outputs.cache-found }}
 
 jobs:
   build-test:
@@ -24,6 +27,7 @@ jobs:
       CYGPORT_FILE: ${{ inputs.cygport_file }}
     outputs:
       pv: ${{ steps.data.outputs.pv }}
+      cache-found: ${{ steps.build-cache.outputs.cache-hit == 'true' }}
     steps:
 
       - name: Configure Git for Windows' core.autocrlf
