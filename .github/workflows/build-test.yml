@@ -85,6 +85,9 @@ jobs:
           printf 'CYGPORT_PF=%s\n' "$PF" | tee -a "$GITHUB_ENV"
           printf 'CYGPORT_ARCH=%s\n' "$ARCH" | tee -a "$GITHUB_ENV"
           printf 'CYGPORT_BUILD_REQUIRES=%s\n' "$BUILD_REQUIRES" | tee -a "$GITHUB_ENV"
+
+          printf 'CYGPORT_BUILD_DIR=%s\n' "$(dirname "$CYGPORT_FILE")/${PF}.${ARCH}" | tee -a "$GITHUB_ENV"
+
           printf 'pv=%s\n' "$PV" | tee -a "$GITHUB_OUTPUT"
 
       - name: Install Cygwin build requirements
@@ -169,7 +172,7 @@ jobs:
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: tar -cvf build-results.tar "${CYGPORT_PF}.${CYGPORT_ARCH}/"
+        run: tar -cvf build-results.tar "$CYGPORT_BUILD_DIR"
 
       - name: Store build results
         if: always() && steps.cygport-prep.outcome == 'success'
