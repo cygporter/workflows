@@ -100,7 +100,9 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: |
-          eval "$(cygport "$CYGPORT_FILE" vars NAME PF ARCH)"
+          vars_cmd=(cygport "$CYGPORT_FILE" vars NAME PF ARCH)
+          "${vars_cmd[@]}"
+          eval "$("${vars_cmd[@]}")"
           printf 'CYGPORT_NAME=%s\n' "$NAME" | tee -a "$GITHUB_ENV"
           printf 'CYGPORT_PF=%s\n' "$PF" | tee -a "$GITHUB_ENV"
           printf 'CYGPORT_ARCH=%s\n' "$ARCH" | tee -a "$GITHUB_ENV"
