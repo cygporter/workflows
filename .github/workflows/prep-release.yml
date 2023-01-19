@@ -74,19 +74,6 @@ jobs:
           packages: ${{ inputs.bootstrap_packages }}
           add-to-path: false
 
-      - name: Load data from cygport file
-        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
-        env:
-          PATH: C:\cygwin\bin
-        run: |
-          vars_cmd=(cygport "$CYGPORT_FILE" vars NAME PVR PF ARCH)
-          "${vars_cmd[@]}"
-          eval "$("${vars_cmd[@]}")"
-          printf 'CYGPORT_NAME=%s\n' "$NAME" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_PVR=%s\n' "$PVR" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_PF=%s\n' "$PF" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_ARCH=%s\n' "$ARCH" | tee -a "$GITHUB_ENV"
-
       - name: Check if package cache needs updating
         if: always() && steps.install-bootstrap.outcome == 'success'
         working-directory: C:\
@@ -118,6 +105,19 @@ jobs:
         with:
           name: cygwin-logs
           path: C:\cygwin\var\log\
+
+      - name: Load data from cygport file
+        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
+        env:
+          PATH: C:\cygwin\bin
+        run: |
+          vars_cmd=(cygport "$CYGPORT_FILE" vars NAME PVR PF ARCH)
+          "${vars_cmd[@]}"
+          eval "$("${vars_cmd[@]}")"
+          printf 'CYGPORT_NAME=%s\n' "$NAME" | tee -a "$GITHUB_ENV"
+          printf 'CYGPORT_PVR=%s\n' "$PVR" | tee -a "$GITHUB_ENV"
+          printf 'CYGPORT_PF=%s\n' "$PF" | tee -a "$GITHUB_ENV"
+          printf 'CYGPORT_ARCH=%s\n' "$ARCH" | tee -a "$GITHUB_ENV"
 
       - name: Get build cache
         id: build-cache
