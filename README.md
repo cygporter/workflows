@@ -62,5 +62,3 @@ with:
 
 [reusable workflows]: https://docs.github.com/en/actions/using-workflows/reusing-workflows
 [cygport]: https://cygwin.github.io/cygport/
-[cygporter/action]: https://github.com/cygporter/action
-[actions]: https://docs.github.com/en/actions/creating-actions/about-custom-actions
