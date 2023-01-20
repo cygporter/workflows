@@ -155,9 +155,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag-name.outputs.tag }}
           draft: ${{ ! inputs.publish }}
-          files: |
-            ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*
-            ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/*/*
+          files: ${{ env.CYGPORT_PF }}.${{ env.CYGPORT_ARCH }}/dist/${{ env.CYGPORT_NAME }}/**
           fail_on_unmatched_files: true
           target_commitish: ${{ github.ref }}
           body: ${{ steps.tag-name.outputs.tag }}
