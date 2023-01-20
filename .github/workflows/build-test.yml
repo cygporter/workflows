@@ -26,7 +26,7 @@ jobs:
     env:
       CYGPORT_FILE: ${{ inputs.cygport_file }}
     outputs:
-      pv: ${{ steps.data.outputs.pv }}
+      pv: ${{ steps.data.outputs.PV }}
       cache-found: ${{ steps.build-cache.outputs.cache-hit == 'true' }}
     steps:
 
@@ -80,21 +80,16 @@ jobs:
 
       - name: Load data from cygport file
         id: data
-        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
-        env:
-          PATH: C:\cygwin\bin
-        run: |
-          vars_cmd=(cygport "$CYGPORT_FILE" vars NAME PF PV ARCH BUILD_REQUIRES)
-          "${vars_cmd[@]}"
-          eval "$("${vars_cmd[@]}")"
-          printf 'CYGPORT_NAME=%s\n' "$NAME" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_PF=%s\n' "$PF" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_ARCH=%s\n' "$ARCH" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_BUILD_REQUIRES=%s\n' "$BUILD_REQUIRES" | tee -a "$GITHUB_ENV"
-
-          printf 'CYGPORT_BUILD_DIR=%s\n' "$(dirname "$CYGPORT_FILE")/${PF}.${ARCH}" | tee -a "$GITHUB_ENV"
-
-          printf 'pv=%s\n' "$PV" | tee -a "$GITHUB_OUTPUT"
+        uses: cygporter/actions/vars@main
+        with:
+          cygport_file: ${{ inputs.cygport_file }}
+          vars:
+            - NAME
+            - PF
+            - PV
+            - ARCH
+            - BUILD_REQUIRES
+          cygwin_bin_path: C:\cygwin\bin
 
       # Cache hit here means we can skip most of the rest of this job, since
       # this job is essentially building this cache.
@@ -102,14 +97,14 @@ jobs:
         id: build-cache
         uses: actions/cache@v3
         with:
-          key: ${{ env.CYGPORT_NAME }}-build-${{ github.sha }}
+          key: ${{ steps.data.outputs.NAME }}-build-${{ github.sha }}
           path: build-results.tar
 
       - name: Install Cygwin build requirements
         if: steps.build-cache.outputs.cache-hit != 'true'
         uses: cygwin/cygwin-install-action@db475590d56881c6cef7b3f96f6f3dd9532ea1f4
         with:
-          packages: ${{ env.CYGPORT_BUILD_REQUIRES }}
+          packages: ${{ steps.data.outputs.BUILD_REQUIRES }}
           add-to-path: false
 
       # Check if the package downloads have changed if there's any chance we've
