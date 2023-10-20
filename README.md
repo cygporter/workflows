@@ -32,7 +32,11 @@ with:
   bootstrap_packages: <list>
 ```
 
-The workflow outputs the value of the cygport [`$PV`][PV] variable as `pv`.
+The workflow creates the following outputs:
+
+-   `pv`: the value of the [`$PV`][PV] variable per `cygport vars`.
+-   `cache-found`: whether the build stage was skipped because an up-to-date
+    build cache was available.
 
 ### Prepare release
 
