@@ -203,3 +203,16 @@ jobs:
           name: build-results
           path: build-results.tar
           if-no-files-found: error
+
+      - name: Tar up distribution packages
+        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
+        env:
+          PATH: C:\cygwin\bin
+        run: tar -cvf dist-packages.tar "$CYGPORT_BUILD_DIR"/dist/*
+
+      - name: Store distribution packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-packages
+          path: dist-packages.tar
+          if-no-files-found: error
