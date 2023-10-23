@@ -83,12 +83,7 @@ jobs:
         uses: cygporter/actions/vars@main
         with:
           cygport_file: ${{ inputs.cygport_file }}
-          vars:
-            - NAME
-            - PF
-            - PV
-            - ARCH
-            - BUILD_REQUIRES
+          vars: NAME PF PV ARCH BUILD_REQUIRES
           cygwin_bin_path: C:\cygwin\bin
 
       # Cache hit here means we can skip most of the rest of this job, since
