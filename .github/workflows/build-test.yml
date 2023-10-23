@@ -206,14 +206,14 @@ jobs:
           if-no-files-found: error
 
       - name: Tar up distribution packages
-        if: steps.cygport-prep.outcome != 'skipped'
+        if: steps.cygport-package.outcome != 'skipped'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: tar -cvf dist-packages.tar "$CYGPORT_BUILD_DIR"/dist/*
 
       - name: Store distribution packages
-        if: steps.cygport-prep.outcome != 'skipped'
+        if: steps.cygport-package.outcome != 'skipped'
         uses: actions/upload-artifact@v3
         with:
           name: dist-packages
