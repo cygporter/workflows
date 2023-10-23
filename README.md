@@ -105,6 +105,38 @@ secrets:
   maintainer_key: <string>
 ```
 
+## Versions, branches and tags
+
+This repository uses [semver][] for version numbers.
+
+Tags will only specify version numbers, and should never change.  This is
+different to the behaviour for many GitHub official actions, which also use
+semver, but where the latest release of any given version is specified by a
+_moving_ tag, e.g. [actions/checkout@v4][] is a tag pointing to the latest
+v4.x.x release of actions/checkout.
+
+Branches are as follows:
+
+-   `main` points to the code that's expected to be in the next release.
+-   `v*` points to the latest release within a major or minor release sequence.
+-   `maint/v*` points to the next release within a major or minor release
+    sequence.
+-   All other branches are for work in development.
+
+The `main`, `v*` and `maint/v*` branches should only move forward; work on
+branches in progress may sometimes be rebased or otherwise changed and are not
+expected to have a persistent history.
+
+Bug fixes are, where possible, made in a single commit on a branch taken from
+the commit that introduced the bug, as suggested in ["git bugfix branches:
+choose the root wisely"][gcbenison], and then merged wherever they need
+merging.  Possibly this is a terrible idea -- it's definitely not one that
+seems to have caught on -- but I like it in theory and want to give it a fair
+trial.
+
 [reusable workflows]: https://docs.github.com/en/actions/using-workflows/reusing-workflows
 [cygport]: https://cygwin.github.io/cygport/
 [PV]: https://cygwin.github.io/cygport/syntax_cygpart.html#PV
+[semver]: https://semver.org/spec/v2.0.0.html
+[actions/checkout@v4]: https://github.com/actions/checkout/tree/v4
+[gcbenison]: https://gcbenison.wordpress.com/2012/01/17/git-bugfix-branches-choose-the-root-wisely/
