@@ -83,15 +83,4 @@ jobs:
         uses: cygporter/actions/vars@main
         with:
           cygport_file: ${{ inputs.cygport_file }}
-          vars:
-            - NAME
-            - PF
-            - PV
-            - ARCH
-            - BUILD_REQUIRES
-          cygwin_bin_path: C:\cygwin\bin
-
-      - name: Report output
-        env:
-          DATA: ${{ steps.data.outputs.vars }}
-        run: printf '%q\n' "$DATA"
+          vars: NAME PF PV ARCH BUILD_REQUIRES
