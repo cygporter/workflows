@@ -1,0 +1,37 @@
+name: Prepare release
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Name for the release tag
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  github-release:
+    name: Create a GitHub release
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Get the build results
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-packages
+
+      - name: Unpack the build
+        run: tar -xf dist-packages.tar
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.tag_name }}
+          draft: false
+          files: '*/dist/*/**'
+          fail_on_unmatched_files: true
+          target_commitish: ${{ github.ref }}
+          body: ${{ inputs.tag_name }}

@@ -12,12 +12,12 @@ on:
         type: string
         default: cygport
     outputs:
-      pv:
+      cygport-pv:
         description: The $PV value from the cygport file
         value: ${{ jobs.build-test.outputs.pv }}
-      cache-found:
-        description: Whether an existing build cache was found and used
-        value: ${{ jobs.build-test.outputs.cache-found }}
+      cygport-pvr:
+        description: The $PVR value from the cygport file
+        value: ${{ jobs.build-test.outputs.pvr }}
 
 jobs:
   build-test:
@@ -27,7 +27,7 @@ jobs:
       CYGPORT_FILE: ${{ inputs.cygport_file }}
     outputs:
       pv: ${{ steps.data.outputs.pv }}
-      cache-found: ${{ steps.build-cache.outputs.cache-hit == 'true' }}
+      pvr: ${{ steps.data.outputs.pvr }}
     steps:
 
       - name: Configure Git for Windows' core.autocrlf
@@ -84,29 +84,20 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: |
-          vars_cmd=(cygport "$CYGPORT_FILE" vars NAME PF PV ARCH BUILD_REQUIRES)
+          vars_cmd=(cygport "$CYGPORT_FILE" vars ARCH PF PV PVR BUILD_REQUIRES)
           "${vars_cmd[@]}"
           eval "$("${vars_cmd[@]}")"
-          printf 'CYGPORT_NAME=%s\n' "$NAME" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_PF=%s\n' "$PF" | tee -a "$GITHUB_ENV"
-          printf 'CYGPORT_ARCH=%s\n' "$ARCH" | tee -a "$GITHUB_ENV"
+
+          build_dir="$(dirname "$CYGPORT_FILE")/${PF}.${ARCH}"
+
           printf 'CYGPORT_BUILD_REQUIRES=%s\n' "$BUILD_REQUIRES" | tee -a "$GITHUB_ENV"
 
-          printf 'CYGPORT_BUILD_DIR=%s\n' "$(dirname "$CYGPORT_FILE")/${PF}.${ARCH}" | tee -a "$GITHUB_ENV"
+          printf 'CYGPORT_BUILD_DIR=%s\n' "$build_dir" | tee -a "$GITHUB_ENV"
 
           printf 'pv=%s\n' "$PV" | tee -a "$GITHUB_OUTPUT"
-
-      # Cache hit here means we can skip most of the rest of this job, since
-      # this job is essentially building this cache.
-      - name: Use build cache
-        id: build-cache
-        uses: actions/cache@v3
-        with:
-          key: ${{ env.CYGPORT_NAME }}-build-${{ github.sha }}
-          path: build-results.tar
+          printf 'pvr=%s\n' "$PVR" | tee -a "$GITHUB_OUTPUT"
 
       - name: Install Cygwin build requirements
-        if: steps.build-cache.outputs.cache-hit != 'true'
         uses: cygwin/cygwin-install-action@db475590d56881c6cef7b3f96f6f3dd9532ea1f4
         with:
           packages: ${{ env.CYGPORT_BUILD_REQUIRES }}
@@ -147,14 +138,12 @@ jobs:
           path: C:\cygwin\var\log\
 
       - name: Cygport download
-        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" download
 
       - name: Cygport prep
-        if: steps.build-cache.outputs.cache-hit != 'true'
         id: cygport-prep
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
@@ -162,28 +151,24 @@ jobs:
         run: cygport "$CYGPORT_FILE" prep
 
       - name: Cygport compile
-        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" compile
 
       - name: Cygport test
-        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" test
 
       - name: Cygport install
-        if: steps.build-cache.outputs.cache-hit != 'true'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" install
 
       - name: Cygport package
-        if: steps.build-cache.outputs.cache-hit != 'true'
         id: cygport-package
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
