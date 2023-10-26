@@ -84,3 +84,26 @@ jobs:
         with:
           cygport_file: ${{ inputs.cygport_file }}
           vars: NAME PF PV ARCH BUILD_REQUIRES
+
+      # Check if the package downloads have changed if there's any chance we've
+      # managed to reasonably update them.
+      - name: Check if package cache needs updating
+        if: always() && steps.install-bootstrap.outcome == 'success'
+        working-directory: C:\
+        shell: bash
+        run: |
+          if [[ -d cygwin-packages ]]; then
+            find cygwin-packages -type f ! -name setup.ini -print0 |
+              sort -z |
+              xargs -0 b2sum >cygwin-package-checksum.new
+            if ! diff cygwin-package-checksum.old cygwin-package-checksum.new; then
+              echo UPDATE_CYGWIN_PACKAGE_CACHE=YesPlease | tee -a "$GITHUB_ENV"
+            fi
+          fi
+
+      - name: Store package cache
+        if: always() && env.UPDATE_CYGWIN_PACKAGE_CACHE == 'YesPlease'
+        uses: actions/cache/save@v3
+        with:
+          key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: C:\cygwin-packages
