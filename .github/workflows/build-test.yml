@@ -180,14 +180,14 @@ jobs:
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: tar -cvf build-results.tar "$CYGPORT_BUILD_DIR"
+        run: tar -cvaf /cygdrive/c/build-results.tar.xz "$CYGPORT_BUILD_DIR"
 
       - name: Store build results
         if: always() && steps.cygport-prep.outcome != 'skipped'
         uses: actions/upload-artifact@v3
         with:
           name: build-results
-          path: build-results.tar
+          path: C:\build-results.tar.xz
           if-no-files-found: error
 
       - name: Tar up distribution packages
