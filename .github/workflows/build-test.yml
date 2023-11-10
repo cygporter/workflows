@@ -11,6 +11,11 @@ on:
         required: false
         type: string
         default: cygport
+      compress_results:
+        description: If and how to compress build results
+        required: false
+        type: string
+        default: ''
     outputs:
       cygport-pv:
         description: The $PV value from the cygport file
@@ -29,6 +34,54 @@ jobs:
       pv: ${{ steps.data.outputs.pv }}
       pvr: ${{ steps.data.outputs.pvr }}
     steps:
+
+      - name: Verify options
+        shell: bash
+        env:
+          COMPRESS_RESULTS: ${{ inputs.compress_results }}
+        run: |
+          case "$COMPRESS_RESULTS" in
+            '')
+              echo TAR_COMPRESSION_ARG=
+              echo TAR_FILE_SUFFIX=
+              ;;
+            j|bzip|bzip2)
+              echo TAR_COMPRESSION_ARG=-j
+              echo TAR_FILE_SUFFIX=.bz2
+              ;;
+            J|xz)
+              echo TAR_COMPRESSION_ARG=-J
+              echo TAR_FILE_SUFFIX=.xz
+              ;;
+            lz|lzip)
+              echo TAR_COMPRESSION_ARG=--lzip
+              echo TAR_FILE_SUFFIX=.lz
+              ;;
+            lzma)
+              echo TAR_COMPRESSION_ARG=--lzma
+              echo TAR_FILE_SUFFIX=.lzma
+              ;;
+            lzo|lzop)
+              echo TAR_COMPRESSION_ARG=--lzop
+              echo TAR_FILE_SUFFIX=.lzop
+              ;;
+            z|gz|gzip)
+              echo TAR_COMPRESSION_ARG=-z
+              echo TAR_FILE_SUFFIX=.gz
+              ;;
+            Z|compress)
+              echo TAR_COMPRESSION_ARG=-Z
+              echo TAR_FILE_SUFFIX=.Z
+              ;;
+            zst|zstd)
+              echo TAR_COMPRESSION_ARG=--zstd
+              echo TAR_FILE_SUFFIX=.zst
+              ;;
+            *)
+              printf "::error::Unexpected compression option %q\n" "$COMPRESS_RESULTS" >&2
+              exit 64  # EX_USAGE
+              ;;
+          esac | tee -a "$GITHUB_ENV"
 
       - name: Configure Git for Windows' core.autocrlf
         run: git config --global core.autocrlf input
@@ -184,14 +237,14 @@ jobs:
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: tar -cvaf /cygdrive/c/build-results.tar.xz "$CYGPORT_BUILD_DIR"
+        run: tar -cv $TAR_COMPRESSION_ARG -f /cygdrive/c/build-results.tar"$TAR_FILE_SUFFIX" "$CYGPORT_BUILD_DIR"
 
       - name: Store build results
         if: always() && steps.cygport-prep.outcome != 'skipped'
         uses: actions/upload-artifact@v3
         with:
           name: build-results
-          path: C:\build-results.tar.xz
+          path: C:\build-results.tar${{ env.TAR_FILE_SUFFIX }}
           if-no-files-found: error
 
       - name: Store distribution packages
