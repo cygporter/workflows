@@ -88,11 +88,12 @@ jobs:
           "${vars_cmd[@]}"
           eval "$("${vars_cmd[@]}")"
 
-          build_dir="$(dirname "$CYGPORT_FILE")/${PF}.${ARCH}"
-
           printf 'CYGPORT_BUILD_REQUIRES=%s\n' "$BUILD_REQUIRES" | tee -a "$GITHUB_ENV"
 
+          build_dir="$(dirname "$CYGPORT_FILE")/${PF}.${ARCH}"
+          win_build_dir="$(cygpath -aw "$build_dir")"
           printf 'CYGPORT_BUILD_DIR=%s\n' "$build_dir" | tee -a "$GITHUB_ENV"
+          printf 'CYGPORT_WIN_BUILD_DIR=%s\n' "$win_build_dir" | tee -a "$GITHUB_ENV"
 
           printf 'pv=%s\n' "$PV" | tee -a "$GITHUB_OUTPUT"
           printf 'pvr=%s\n' "$PVR" | tee -a "$GITHUB_OUTPUT"
@@ -175,6 +176,9 @@ jobs:
           PATH: C:\cygwin\bin
         run: cygport "$CYGPORT_FILE" package
 
+      # Need to tar this up because we care about permissions and symlinks and
+      # so forth that Cygwin's tar can maintain but which
+      # actions/upload-artifact can't.
       - name: Tar up build results
         if: always() && steps.cygport-prep.outcome != 'skipped'
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
@@ -190,17 +194,10 @@ jobs:
           path: C:\build-results.tar.xz
           if-no-files-found: error
 
-      - name: Tar up distribution packages
-        if: steps.cygport-package.outcome != 'skipped'
-        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
-        env:
-          PATH: C:\cygwin\bin
-        run: tar -cvf dist-packages.tar "$CYGPORT_BUILD_DIR"/dist/*
-
       - name: Store distribution packages
         if: steps.cygport-package.outcome != 'skipped'
         uses: actions/upload-artifact@v3
         with:
           name: dist-packages
-          path: dist-packages.tar
+          path: ${{ env.CYGPORT_WIN_BUILD_DIR }}\dist
           if-no-files-found: error
