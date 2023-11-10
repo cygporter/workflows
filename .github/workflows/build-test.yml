@@ -126,6 +126,15 @@ jobs:
           key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
 
+      # Some cygport commands might use git commands.  This is necessary to
+      # make sure they don't error out.
+      - name: Configure Git safe.directory
+        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
+        env:
+          PATH: C:\cygwin\bin
+        run: |
+          git config --global --add safe.directory '*' || :
+
       - name: Generate cygcheck output
         if: always() && steps.install-bootstrap.outcome != 'skipped'
         run: C:\cygwin\bin\cygcheck.exe -srv >C:\cygwin\var\log\cygcheck.out
