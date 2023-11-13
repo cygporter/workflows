@@ -11,6 +11,11 @@ on:
         required: false
         type: string
         default: cygport
+      ref:
+        description: Git ref to check out, build and test
+        required: false
+        type: string
+        default: ''
     outputs:
       cygport-pv:
         description: The $PV value from the cygport file
@@ -35,6 +40,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
 
       # In the name of speed, pull packages from a previous cache on GitHub's
       # servers if one exists, rather than hitting the Cygwin mirrors.
