@@ -11,6 +11,11 @@ on:
         required: false
         type: string
         default: cygport
+      ref:
+        description: Git ref to check out, build and test
+        required: false
+        type: string
+        default: ''
       compress_results:
         description: If and how to compress build results
         required: false
@@ -88,6 +93,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
 
       # In the name of speed, pull packages from a previous cache on GitHub's
       # servers if one exists, rather than hitting the Cygwin mirrors.
@@ -179,6 +186,15 @@ jobs:
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
+
+      # Some cygport commands might use git commands.  This is necessary to
+      # make sure they don't error out.
+      - name: Configure Git safe.directory
+        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
+        env:
+          PATH: C:\cygwin\bin
+        run: |
+          git config --global --add safe.directory '*' || :
 
       - name: Generate cygcheck output
         if: always() && steps.install-bootstrap.outcome != 'skipped'
