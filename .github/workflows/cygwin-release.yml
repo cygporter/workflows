@@ -100,9 +100,9 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: |
-          vars_cmd=(cygport "$CYGPORT_FILE" vars NAME)
-          "${vars_cmd[@]}"
-          eval "$("${vars_cmd[@]}")"
+          vars_data="$(__cygport_check_prog_req_nonfatal=Yes cygport "$CYGPORT_FILE" vars NAME)"
+          printf '%s\n' "$vars_data"
+          eval "$vars_data"
           printf 'CYGPORT_NAME=%s\n' "$NAME" | tee -a "$GITHUB_ENV"
 
       - name: Get the build results
@@ -130,7 +130,7 @@ jobs:
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
           PATH: C:\cygwin\bin
-        run: SSH_KEY=~/.ssh/id_rsa cygport "$CYGPORT_FILE" upload
+        run: SSH_KEY=~/.ssh/id_rsa __cygport_check_prog_req_nonfatal=Yes cygport "$CYGPORT_FILE" upload
 
       - name: Remove maintainer key
         if: always() && steps.configure-cygwin-ssh.outcome != 'skipped'
