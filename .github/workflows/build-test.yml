@@ -84,9 +84,9 @@ jobs:
         env:
           PATH: C:\cygwin\bin
         run: |
-          vars_cmd=(cygport "$CYGPORT_FILE" vars ARCH PF PV PVR BUILD_REQUIRES)
-          "${vars_cmd[@]}"
-          eval "$("${vars_cmd[@]}")"
+          vars_data="$(__cygport_check_prog_req_nonfatal=Yes cygport "$CYGPORT_FILE" vars ARCH PF PV PVR BUILD_REQUIRES)"
+          printf '%s\n' "$vars_data"
+          eval "$vars_data"
 
           build_dir="$(dirname "$CYGPORT_FILE")/${PF}.${ARCH}"
 
