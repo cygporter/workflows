@@ -112,9 +112,10 @@ jobs:
       - name: Use Cygwin package cache
         uses: actions/cache/restore@v3
         with:
-          key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
+          key: cygwin-packages-${{ github.run_id }}-${{ strategy.job-index }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
           restore-keys: |
+            cygwin-packages-${{ github.run_id }}-${{ strategy.job-index }}-
             cygwin-packages-${{ github.run_id }}-
             cygwin-packages-
 
@@ -184,7 +185,7 @@ jobs:
         if: always() && env.UPDATE_CYGWIN_PACKAGE_CACHE == 'YesPlease'
         uses: actions/cache/save@v3
         with:
-          key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
+          key: cygwin-packages-${{ github.run_id }}-${{ strategy.job-index }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
 
       # Some cygport commands might use git commands.  This is necessary to
