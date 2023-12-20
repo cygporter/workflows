@@ -110,9 +110,6 @@ jobs:
         with:
           name: dist-packages
 
-      - name: Unpack the build
-        run: tar -xf dist-packages.tar
-
       - name: Configure SSH
         id: configure-cygwin-ssh
         shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}

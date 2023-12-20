@@ -23,9 +23,6 @@ jobs:
         with:
           name: dist-packages
 
-      - name: Unpack the build
-        run: tar -xf dist-packages.tar
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
