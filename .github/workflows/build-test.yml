@@ -92,7 +92,7 @@ jobs:
         run: git config --global core.autocrlf input
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
 
@@ -110,7 +110,7 @@ jobs:
       # to ensure that happens.
       # [0]: https://github.com/actions/cache/blob/6fd2d4538ca777f67fccddb233cf1a8ff1339012/tips-and-workarounds.md#update-a-cache
       - name: Use Cygwin package cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ strategy.job-index }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
@@ -134,16 +134,16 @@ jobs:
 
       - name: Install bootstrap packages
         id: install-bootstrap
-        uses: cygwin/cygwin-install-action@db475590d56881c6cef7b3f96f6f3dd9532ea1f4
+        uses: cygwin/cygwin-install-action@v6
         with:
           packages: ${{ inputs.bootstrap_packages }}
           add-to-path: false
 
       - name: Load data from cygport file
         id: data
-        shell: C:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
+        shell: D:\cygwin\bin\bash.exe --noprofile --norc -e -o pipefail -o igncr {0}
         env:
-          PATH: C:\cygwin\bin
+          PATH: D:\cygwin\bin
         run: |
           vars_data="$(__cygport_check_prog_req_nonfatal=Yes cygport "$CYGPORT_FILE" vars ARCH PF PV PVR BUILD_REQUIRES)"
           printf '%s\n' "$vars_data"
@@ -160,7 +160,7 @@ jobs:
           printf 'pvr=%s\n' "$PVR" | tee -a "$GITHUB_OUTPUT"
 
       - name: Install Cygwin build requirements
-        uses: cygwin/cygwin-install-action@db475590d56881c6cef7b3f96f6f3dd9532ea1f4
+        uses: cygwin/cygwin-install-action@v6
         with:
           packages: ${{ env.CYGPORT_BUILD_REQUIRES }}
           add-to-path: false
@@ -183,7 +183,7 @@ jobs:
 
       - name: Store package cache
         if: always() && env.UPDATE_CYGWIN_PACKAGE_CACHE == 'YesPlease'
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ strategy.job-index }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
@@ -203,7 +203,7 @@ jobs:
 
       - name: Store Cygwin logs
         if: always() && steps.install-bootstrap.outcome != 'skipped'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cygwin-logs
           path: C:\cygwin\var\log\
@@ -258,7 +258,7 @@ jobs:
 
       - name: Store build results
         if: always() && steps.cygport-prep.outcome != 'skipped'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-results
           path: C:\build-results.tar${{ env.TAR_FILE_SUFFIX }}
@@ -266,7 +266,7 @@ jobs:
 
       - name: Store distribution packages
         if: steps.cygport-package.outcome != 'skipped'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist-packages
           path: ${{ env.CYGPORT_WIN_BUILD_DIR }}\dist

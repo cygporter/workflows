@@ -33,12 +33,12 @@ jobs:
         run: git config --global core.autocrlf input
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Want to fetch entire history so we can push to the Cygwin Git repos
 
       - name: Use Cygwin package cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
@@ -79,7 +79,7 @@ jobs:
 
       - name: Store package cache
         if: always() && env.UPDATE_CYGWIN_PACKAGE_CACHE == 'YesPlease'
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           key: cygwin-packages-${{ github.run_id }}-${{ github.run_attempt }}
           path: C:\cygwin-packages
@@ -90,7 +90,7 @@ jobs:
 
       - name: Store Cygwin logs
         if: always() && steps.install-bootstrap.outcome != 'skipped'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cygwin-logs
           path: C:\cygwin\var\log\
@@ -106,7 +106,7 @@ jobs:
           printf 'CYGPORT_NAME=%s\n' "$NAME" | tee -a "$GITHUB_ENV"
 
       - name: Get the build results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           name: dist-packages
 
@@ -138,7 +138,7 @@ jobs:
 
       - name: Store Cygport upload logs
         if: always() && steps.cygport-upload.outcome != 'skipped'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: upload.log
           path: '*/log/*-upload.log'
